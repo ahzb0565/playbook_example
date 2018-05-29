@@ -7,7 +7,9 @@
 
   vars:
     project_url: "https://github.com/ahzb0565/zuipython.git"
-    project_path: /home/ubuntu/zuipython
+    project_name: zuipython
+    project_root: /home/ubuntu
+    project_path: "{{ project_root }}/{{ project_name }}"
 
   tasks:
     - name: clean up workspace
@@ -21,7 +23,7 @@
         state: present
 
     - name: stop uwsgi
-      shell: "kill `pidof uwsgi`"
+      shell: "/home/ubuntu/.local/bin/uwsgi --stop /tmp/{{ project_name }}-master.pid"
       ignore_errors: yes
 
     - name: install uWSGI
@@ -68,14 +70,14 @@
 
     - name: clean up nginx
       file:
-        dest: /etc/nginx/sites-enabled/zuipython
+        dest: "/etc/nginx/sites-enabled/{{ project_name }}"
         state: absent
       become: true
 
     - name: config nginx
       template:
-        src: zuipython.nginx.conf
-        dest: /etc/nginx/sites-enabled/zuipython 
+        src: site.nginx.conf
+        dest: /etc/nginx/sites-enabled/{{ project_name }}
       become: true
       notify:
         - restart nginx
@@ -92,6 +94,4 @@
         name: nginx
         state: restarted
       become: true
-    - name: restart uwsgi
-      command: "uwisgi --http :8001 --module zuipython.wsgi"
         

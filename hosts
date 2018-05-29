@@ -1,5 +1,5 @@
 [test]
-54.71.124.223
+54.186.163.10
 
 [test:vars]
 ansible_python_interpreter=/usr/bin/python3
