@@ -1,0 +1,97 @@
+---
+- hosts: test
+  #remote_uer: ubuntu
+
+  #roles:
+  #  - create_folder 
+
+  vars:
+    project_url: "https://github.com/ahzb0565/zuipython.git"
+    project_path: /home/ubuntu/zuipython
+
+  tasks:
+    - name: clean up workspace
+      file:
+        dest: "{{ project_path }}"
+        state: absent
+
+    - name: install pip3
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: stop uwsgi
+      shell: "kill `pidof uwsgi`"
+      ignore_errors: yes
+
+    - name: install uWSGI
+      pip:
+        executable: pip3
+        name: uwsgi
+
+    - name: clone codes
+      git:
+        repo: "{{ project_url }}"
+        dest: "{{ project_path }}"
+        version: HEAD
+
+    - name: install python dependencies
+      pip:
+        requirements: "{{ project_path }}/requirments.txt"
+        executable: pip3
+
+    - name: make migrations
+      command: "python3 manage.py makemigrations"
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: migrate
+      command: "python3 manage.py migrate"
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: config uwsgi
+      template:
+        src: wsgi.ini
+        dest: "{{ project_path }}/wsgi.ini"
+
+    - name: start uwsgi
+      command: "/home/ubuntu/.local/bin/uwsgi --ini wsgi.ini"
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: install nginx
+      apt:
+        name: nginx
+        state: present
+      become: true
+
+    - name: clean up nginx
+      file:
+        dest: /etc/nginx/sites-enabled/zuipython
+        state: absent
+      become: true
+
+    - name: config nginx
+      template:
+        src: zuipython.nginx.conf
+        dest: /etc/nginx/sites-enabled/zuipython 
+      become: true
+      notify:
+        - restart nginx
+
+    #- name: runserver
+    #  command: "python3 manage.py runserver"
+    #  args:
+    #    chdir: /home/ubuntu/workspace
+        
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: true
+    - name: restart uwsgi
+      command: "uwisgi --http :8001 --module zuipython.wsgi"
+        

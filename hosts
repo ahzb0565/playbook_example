@@ -1,0 +1,5 @@
+[test]
+54.71.124.223
+
+[test:vars]
+ansible_python_interpreter=/usr/bin/python3

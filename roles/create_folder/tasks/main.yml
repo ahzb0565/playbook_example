@@ -1,0 +1,6 @@
+---
+# tasks file for create_folder
+- name: create a folder
+  file:
+    dest: /home/ubuntu/workspace/bob
+    state: directory
